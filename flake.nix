@@ -1,7 +1,7 @@
 {
   description = "Apache Spark nix build";
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
@@ -18,7 +18,7 @@
           inherit system;
         };
 
-        sparkVersion = "3.5.6";
+        sparkVersion = "3.5.8";
         mvnExtraArgs = "-Pkubernetes";
         scala-pkg = pkgs.scala_2_13;
 
@@ -66,7 +66,7 @@
             owner = "apache";
             repo = "spark";
             tag = "v${sparkVersion}";
-            hash = "sha256-ESkM2YXoQHTyUW71DZZin2HsFCtwslU4zkBkiZNvPDI=";
+            hash = "sha256-M91McGXYTawtRnUSPOmU7cyfzOik9SqlRPvPp4naqGg=";
           };
 
           JAVA_HOME = jdk-pkg.home;
@@ -108,7 +108,7 @@
         };
 
         externalDepsHash = {
-          "x86_64-linux" = "sha256-+8J1t3tOT/cHO3h9mkQ0HkMOEMfKVaoYFnskF2fDET0=";
+          "x86_64-linux" = "sha256-HWx6ANvn5+TSpMUqWqv1FjN9cFUMRe37l5n4bTQHK/M=";
         };
         external-deps = pkgs.stdenv.mkDerivation {
           name = "spark-${sparkVersion}-external-deps";
