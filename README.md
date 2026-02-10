@@ -38,9 +38,9 @@ With all dependencies captured, the final `spark` derivation performs an offline
 
 This flake is currently a proof of concept and has some limitations. The following are key areas for future improvement:
 
-*   **Parameterization:** The versions for Spark, Scala, the JDK, and the selected Maven profiles are currently hardcoded in `flake.nix`. The next logical step is to make these configurable via flake inputs or function arguments.
+*   **Parameterization:** The versions for Spark, the JDK, protobuf, and the selected Maven profiles are currently hardcoded in `flake.nix`. The next logical step is to make these configurable via flake inputs or function arguments.
 *   **Optimization:** There is a possibility of fetching all dependencies without a full compilation; using mvn package is overkill.
-*   **Broader Testing:** The current configuration has been tested only as-is (`sparkVersion = "3.5.6"`, `scala_2_13`, `-Pkubernetes`). Broader testing with different versions and profiles is needed.
+*   **Broader Testing:** The current configuration has been tested only as-is (`sparkVersion = "4.1.1"`, Scala 2.13, `-Pkubernetes`). Broader testing with different profiles is needed.
 *   **Upstreaming:** The ultimate goal could be to refine this work and contribute it back to `nixpkgs` as a more flexible alternative to the existing Spark package.
 
 ## Usage
@@ -54,3 +54,12 @@ nix build
 ```
 
 The resulting distribution will be available in the `result/` directory.
+
+## Current Defaults
+
+*   Spark: 4.1.1
+*   Scala: 2.13 (only supported upstream for Spark 4.x)
+*   JDK: 17
+*   gRPC: 1.76.0 (matches upstream `pom.xml`)
+
+Note: `flake.nix` uses fixed-output derivations, so updating Spark versions requires refreshing the source hash, the gRPC plugin hash, and the external-deps hash.

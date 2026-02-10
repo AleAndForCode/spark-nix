@@ -18,7 +18,7 @@
           inherit system;
         };
 
-        sparkVersion = "3.5.8";
+        sparkVersion = "4.1.1";
         mvnExtraArgs = "-Pkubernetes";
         scala-pkg = pkgs.scala_2_13;
 
@@ -28,15 +28,15 @@
           jdk_headless = jdk-pkg;
         };
 
-        protobuf-pkg = pkgs.protobuf_25;
+        protobuf-pkg = pkgs.protobuf;
 
         grpc-java-suffix = {
           "x86_64-linux" = "linux-x86_64.exe";
         };
 
-        grpc-java-version = "1.56.0";
+        grpc-java-version = "1.76.0";
         grpc-java-hash = {
-          "x86_64-linux" = "sha256-oRSCvwLTowg5XoGhDMMzWqdXPBheLtl4DVUiiVbW4yc=";
+          "x86_64-linux" = "sha256-AZJthJEssAc6vZsxBGdUFtMPKxdXN2tSb6Dfu5QnIhg=";
         };
         grpc-java-pkg = pkgs.stdenv.mkDerivation {
           name = "protoc-gen-grpc-java";
@@ -66,7 +66,7 @@
             owner = "apache";
             repo = "spark";
             tag = "v${sparkVersion}";
-            hash = "sha256-M91McGXYTawtRnUSPOmU7cyfzOik9SqlRPvPp4naqGg=";
+            hash = "sha256-PuhaIdcvtwGRXBT3BWhUFvM8+RSenmMdqrWyZ4o+zdY=";
           };
 
           JAVA_HOME = jdk-pkg.home;
@@ -76,15 +76,13 @@
             echo "Pathing mvn and sbt wrappers..."
             patchShebangs .
             substituteInPlace ./build/mvn \
-              --replace-fail 'install_mvn()' 'never_install_mvn()' \
-              --replace-fail 'install_scala()' 'never_install_scala()'
+              --replace-fail 'install_mvn()' 'never_install_mvn()'
 
             substituteInPlace ./build/mvn \
-              --replace-fail 'install_mvn' "" \
-              --replace-fail 'install_scala' ""
+              --replace-fail 'install_mvn' ""
 
             substituteInPlace ./project/SparkBuild.scala \
-              --replace-fail 'val protoVersion = "3.23.4"' 'val protoVersion = "$PROTO_VERSION"'
+              --replace-fail 'val protoVersion = "4.33.0"' 'val protoVersion = "$PROTO_VERSION"'
 
             substituteInPlace ./build/sbt-launch-lib.bash \
               --replace-fail '[[ -f "$sbt_jar" ]] || acquire_sbt_jar "$sbt_version" || {' "true || {" \
@@ -94,10 +92,6 @@
               --replace-fail 'build/mvn dependency:get -Dartifact=commons-cli:commons-cli:''${COMMONS_CLI_VERSION} -q' "" \
               --replace-fail 'COMMONS_CLI_VERSION=`build/mvn help:evaluate -Dexpression=commons-cli.version -q -DforceStdout`' "" \
               --replace-fail '`build/mvn help:evaluate -Pscala-''${TO_VERSION} -Dexpression=scala.version -q -DforceStdout`' "${scala-pkg.version}"
-
-            scala_version=$(echo ${scala-pkg.version} | awk -F. '{print $1"."$2}')
-            echo "Swithcih Scala version to $scala_version..."
-            ./dev/change-scala-version.sh $scala_version
           '';
 
           dontFixup = true;
@@ -108,7 +102,7 @@
         };
 
         externalDepsHash = {
-          "x86_64-linux" = "sha256-HWx6ANvn5+TSpMUqWqv1FjN9cFUMRe37l5n4bTQHK/M=";
+          "x86_64-linux" = "sha256-mrD6FtDJgN9z/dg2nHiuDT8eliOwqDOCY2aIoIxnMh8=";
         };
         external-deps = pkgs.stdenv.mkDerivation {
           name = "spark-${sparkVersion}-external-deps";
@@ -129,13 +123,12 @@
           SCALA_LIBRARY = "${scala-pkg}/lib/scala-library.jar";
           SPARK_PROTOC_EXEC_PATH = pkgs.lib.getExe protobuf-pkg;
           CONNECT_PLUGIN_EXEC_PATH = pkgs.lib.getExe grpc-java-pkg;
-          PROTO_VERSION = "3.${protobuf-pkg.version}";
+          PROTO_VERSION = "4.${protobuf-pkg.version}";
 
           buildPhase = ''
             echo "Getting maven help plugin"
             mvn dependency:get -Dartifact=org.apache.maven.plugins:maven-help-plugin:3.5.1 -Dmaven.repo.local=$out/.m2
             mvn help:help -Dmaven.repo.local=$out/.m2 # Triggers metadata creation
-            scala_version=$(echo ${scala-pkg.version} | awk -F. '{print $1"."$2}')
             echo "Buiding whole project to fetch all deps..."
             ./build/mvn \
                 -DskipTests \
@@ -144,8 +137,7 @@
                 -Dmaven.source.skip \
                 -Dcyclonedx.skip=true \
                 -DskipDefaultProtoc \
-                -Dprotobuf.version=3.${protobuf-pkg.version} \
-                -Pscala-$scala_version \
+                -Dprotobuf.version=4.${protobuf-pkg.version} \
                 -Puser-defined-protoc \
                 ${mvnExtraArgs} \
                 package -DsecondaryCacheDir=$out/sbt-cache -Dmaven.repo.local=$out/.m2
@@ -183,7 +175,7 @@
           SCALA_LIBRARY = "${scala-pkg}/lib/scala-library.jar";
           SPARK_PROTOC_EXEC_PATH = pkgs.lib.getExe protobuf-pkg;
           CONNECT_PLUGIN_EXEC_PATH = pkgs.lib.getExe grpc-java-pkg;
-          PROTO_VERSION = "3.${protobuf-pkg.version}";
+          PROTO_VERSION = "4.${protobuf-pkg.version}";
 
           buildPhase = ''
             echo "Installing maven dependancies"
@@ -198,15 +190,13 @@
               --replace-fail 'help:evaluate' 'help:evaluate -o -nsu' \
               --replace-fail 'BUILD_COMMAND=("$MVN" clean package' 'BUILD_COMMAND=("$MVN" package -o -nsu'
 
-            scala_version=$(echo ${scala-pkg.version} | awk -F. '{print $1"."$2}')
             echo "Buiding project..."
             ./dev/make-distribution.sh \
                 -Puser-defined-protoc \
                 -DskipDefaultProtoc \
-                -Dprotobuf.version=3.${protobuf-pkg.version} \
+                -Dprotobuf.version=4.${protobuf-pkg.version} \
                 -DsecondaryCacheDir=$sbtDeps/sbt-cache \
                 -Dmaven.repo.local=$mvnDeps/.m2 \
-                -Pscala-$scala_version \
                 ${mvnExtraArgs}
           '';
         };
